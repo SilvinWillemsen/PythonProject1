@@ -1,0 +1,181 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[left=3cm, right=3cm, top=2cm]{geometry}
+\title{SCIENTIFIC COMPUTING USING PYTHON\\
+1. PYTHON + SCIENTIFIC COMPUTING, PROJECT
+}
+\author{Silvin Willemsen}
+\date{June 2021}
+
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{appendix}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{listings}
+\usepackage{algorithm2e}
+\usepackage{xcolor}
+\usepackage{dirtree}
+\def\td{t_\delta}
+\def\code#1{\texttt{#1}}
+
+\begin{document}
+
+\maketitle
+
+\section{Problem Statement}\label{sec:problemStatement}
+This projects implements the Lorenz attractor, devised by Edward Lorenz in his 1963 paper \cite{lorenz} in the Python programming language. The Lorenz attractor is a mathematical model for atmospheric convection and is described by the following non-linearly coupled ordinary differential equations (ODEs):
+\begin{subequations}\label{eq:ODEsystem}
+    \begin{align}
+        \frac{dx}{dt} &= \sigma(y-x),\\
+        \frac{dy}{dt} &= x(\rho - z) - y,\\
+        \frac{dz}{dt} &= xy - \beta z,
+    \end{align}
+\end{subequations}
+where independent variables $x = x(t)$, $y = y(t)$, and $z = z(t)$, can be interpreted as coordinates in three-dimensional space (in m) and are all dependent on time $t$ (in s). The system is parameterised by $\sigma$, $\rho$ and $\beta$, which govern the eventual behaviour of the system.
+
+\subsubsection*{Discretisation}
+In order to implement the continuous-time ODE described in \eqref{eq:ODEsystem}, they need to be approximated in a process called \textit{discretisation}. Time $t$ can be discretised using $t = n \td $. Here, the temporal index $n\in \{0, \hdots, N\}$ is an integer with desired number of iterations $N$ and $\td$ is the time step between two consecutive indices (in s). The spatial coordinates can then be be approximated using $x(t)\approxeq x[n]$, $y(t)\approxeq y[n]$ and $z(t)\approxeq z[n]$. 
+
+To approximate the derivatives in \eqref{eq:ODEsystem}, we can use Euler's method. A derivative of a continuous function $f(t)$ can be approximated according to
+\begin{equation}\label{eq:euler}
+    \frac{df}{dt} \approxeq \frac{f(t+\td) - f(t)}{\td}.
+\end{equation}
+In other words, the derivative is approximated using difference between two consecutive function-values divided by the difference in $t$ between them. Other (more accurate) approximations exist, but for simplicity, we continue with the above.
+
+We can then apply Eq. \eqref{eq:euler} to the system of ODEs in \eqref{eq:ODEsystem} to get an approximation. Together with substituting the discrete variables $x[n]$, $y[n]$ and $z[n]$, this yields
+\begin{subequations}
+\begin{align}
+    \frac{x[n+1] - x[n]}{\td} &= \sigma(y[n]-x[n]),\\
+        \frac{y[n+1] - y[n]}{\td} &= x[n](\rho - z[n]) - y[n],\\
+        \frac{z[n+1] - z[n]}{\td} &= x[n]y[n] - \beta z[n].
+\end{align}
+\end{subequations}
+The last step before these equations can be implemented in code, is to write them in terms of the respective coordinate at the next time step $n+1$. This yields the following update equations
+\begin{subequations}\label{eq:updateEqs}
+    \begin{align}
+        x[n+1] &= \sigma(y[n]-x[n])\td + x[n],\\
+        y[n+1]&= \Big( x[n](\rho - z[n]) - y[n]\Big) \td + y[n],\\
+        z[n+1] &= (x[n]y[n] - \beta z[n])\td + z[n].
+    \end{align}
+\end{subequations}
+which can be implemented in Python. A for-loop needs to be created so Eqs. \eqref{eq:updateEqs} can be iteratively calculated until an iteration number $N$.
+
+\subsection{Cases}\label{sec:cases}
+The project description states 5 different cases that need to be tested:
+
+\begin{enumerate}
+    \item $\sigma = 10$, $\beta = 8/3$, and $\rho = 6$
+    \item $\sigma = 10$, $\beta = 8/3$, and $\rho = 16$
+    \item $\sigma = 10$, $\beta = 8/3$, and $\rho = 28$
+    \item $\sigma = 14$, $\beta = 8/3$, and $\rho = 28$
+    \item $\sigma = 14$, $\beta = 13/3$, and $\rho = 28$
+\end{enumerate}
+
+\section{Implementation}
+Algorithm \ref{alg:calcOrder} contains pseudocode showing the core algorithm implementing the Lorenz attractor. The implementation can be found online\footnote{https://github.com/SilvinWillemsen/lorenz}.
+
+\begin{algorithm}[ht]
+    \setstretch{1.1}
+    \fbox{\parbox{0.8\linewidth}
+    {
+
+        Initialise the following:\\
+        - $x[0]$, $y[0]$, and $z[0]$   \\  
+        - free parameters $\sigma$, $\beta$ and $\rho$\\
+        - time step $t_\delta$\\
+        - no. of iterations $N$\\
+        \For {$n = 0:N-1$}
+        {
+            Calculate $x[n+1]$, $y[n+1]$, and $z[n+1]$ using Eqs. \eqref{eq:updateEqs}.\\
+            Save these values to vectors
+        }
+        
+        Plot the saved vectors $x$, $y$ and $z$.
+        }
+    }
+    \vspace{0.12cm}
+    \caption{\it Pseudocode showing the order of calculations.\label{alg:calcOrder}}
+\end{algorithm}
+
+The initial conditions used are $x[0] = 1.0$, $y[0] = 1.0$ and $z[0] = 1.0$. Furthermore, the time step $\td = 0.002$ and number of iterations $N = 10000$ for all cases. A script is made where the simulation can be easily run using other initial conditions, and parameters. This will be introduced below.
+
+\section{Design Considerations}
+The goal of the project is to implement the Equations in \eqref{eq:updateEqs} in Python. The variables needed are the ones found in Eqs. \eqref{eq:updateEqs}. The output of the simulation needs to be three vectors (/arrays) that have the values of $x$, $y$ and $z$ stored over time. These can then be plotted using the \code{matplotlib.pyplot} module.
+
+Below, the file and folder structure can be found:
+\pagebreak
+\dirtree{%
+.1 /.
+.2 lorenz.
+.3 \_\_init\_\_.py.
+.3 run.py.  
+.3 solver.py.  
+.3 finiteDifferences.py.  
+.3 plotting.py.
+.2 cases.
+.3 run\_case.py.
+.3 generate\_data\_and\_figures.py.
+.3 generate\_cases\_CSV.py.
+.3 scheme\_variables.csv. 
+.3 output\_files.
+.4 case1\_output.
+.5 simulation\_result.hdf5.
+.5 xyPlot.pdf.
+.5 xzPlot.pdf.
+.5 yzPlot.pdf.
+.5 xyzPlot.pdf.
+.4 case2\_output.
+.5 ....
+.4 case3\_output.
+.4 case4\_output.
+.4 case5\_output.
+.2 test.
+.3 \_\_init\_\_.py.
+.3 test\_lorenz.py.
+.2 doc.
+.3 ....
+.2 LICENSE.
+.2 README.txt.
+}
+\vspace{2em}
+\noindent 
+Below, some descriptions of the various files are given. A much more detailed description of the modules and scripts, however, can be found in the files themselves and via the sphinx-generated documentation in \code{doc/\_build/html/index.html}.
+
+The \code{lorenz} package (/folder) contains the following files:
+\begin{itemize}
+    \item \code{\_\_init\_\_.py}: needed to make \code{lorenz} a package
+    \item \code{run.py}: This script can be run to simulate the Lorenz attractor.  
+    \item \code{solver.py}: Solves the system and returns vectors of data with $x$, $y$ and $z$ over time.
+    \item \code{finiteDifferences.py}: Used by \code{solver.py} to solve the equations.  
+    \item \code{plotting.py}: Plots the results. 
+\end{itemize}
+\vspace{1em}
+The \code{run.py} file runs \code{solver.py} and plots the results (vectors of data with $x$, $y$ and $z$ over time) using \code{plotting.py} without generating files. The initial conditions, parameters ($\sigma$, $\beta$, and $\rho$), time step $\td$ and number of iterations $N$ can be changed in the file. I decided to have a separate file \code{finiteDifferences.py} that calculates the finite difference schemes, and is used by the solver to have a better overview of what is happening.
+
+The \code{cases} folder contains the following files:
+\begin{itemize}
+    \item \code{run\_case.py}: Script that generates the data and plots for a case specified in the code.
+    \item \code{generate\_data\_and\_figures.py}: Called from \code{run\_case.py} and generates the data and plots for the case specified. It uses the \code{scheme\_variables.csv} file to retrieve the cases data.
+    \item \code{generate\_cases\_CSV.py}: Used to generate the \code{scheme\_variables.csv} file.
+\end{itemize}
+\vspace{1em}
+The \code{run\_case.py} file acts the same way as \code{run.py} but has the values of $\sigma$, $\beta$, and $\rho$ determined by the \code{scheme\_variables.csv} file rather than being user-determined. This \code{.csv} file contains the parameter-values of the 5 different cases presented in Section \ref{sec:cases}. Furthermore, I decided to not have separate files to generate each of the cases (i.e., \code{case1.py}, \code{case2.py}, etc.) but instead have one script \code{run\_case.py} where the case number can be changed in the script. The data and figures are generated and are saved in the \code{output\_files} folder in a(nother) folder called \code{case1\_output} for case 1, \code{case2\_output} for case 2, etc. The data generated is saved in \code{simulation\_result.hdf5}, as \code{.hdf5} files are a great way to store large amounts of data and work with in Python. Furthermore, 4 plots are generated in \code{.pdf} format. Three of these are 2D plots from an $(x,y)$, $(x,z)$ and $(y,z)$ perspective, and the last is a 3D plot.  
+
+\section{Testing}
+
+Once I got plots that looked like the ones I found online, I knew that the implementation of the algorithm could be considered correct. The function I would like to test is the \code{solve} function -- the main function in the \code{solver.py} file. 
+
+The values I would like to test are the vectors returned by the \code{solve} function after 2 iterations. This way I would know that the simulation had ran a few times and that it works. 
+
+The first test I wanted to implement was one that checked whether if the the initial conditions are set to $0$ and the parameters are set to $0$, the solver should return $0$.
+
+Then I tested with different initial conditions and parameter values, ran the solve function for 2 iterations and saved the output in the \code{test\_lorenz.py} file. This could then be used for testing the \code{solve} function at a later point and confirm that any changes to the algorithm would not affect the final result. 
+
+As the choice of initial conditions could make the scheme unstable, a final test should be implemented to check whether after a larger number of iterations (one that would normally be used to plot the results), the values are \code{nan} (not-a-number). Unfortunately, I have not been able to implement this and this is left for future work. 
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}
