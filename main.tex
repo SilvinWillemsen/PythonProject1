@@ -42,7 +42,7 @@ To approximate the derivatives in \eqref{eq:ODEsystem}, we can use Euler's metho
 \begin{equation}\label{eq:euler}
     \frac{df}{dt} \approxeq \frac{f(t+\td) - f(t)}{\td}.
 \end{equation}
-In other words, the derivative is approximated using difference between two consecutive function-values divided by the difference in $t$ between them. Other (more accurate) approximations exist, but for simplicity, we continue with the above.
+In other words, the derivative is approximated using difference between two consecutive function-values divided by the difference in $t$ ($\td$) between them. Other (more accurate) approximations exist, but for simplicity, we continue with the above.
 
 We can then apply Eq. \eqref{eq:euler} to the system of ODEs in \eqref{eq:ODEsystem} to get an approximation. Together with substituting the discrete variables $x[n]$, $y[n]$ and $z[n]$, this yields
 \begin{subequations}
@@ -60,10 +60,10 @@ The last step before these equations can be implemented in code, is to write the
         z[n+1] &= (x[n]y[n] - \beta z[n])\td + z[n].
     \end{align}
 \end{subequations}
-which can be implemented in Python. A for-loop needs to be created so Eqs. \eqref{eq:updateEqs} can be iteratively calculated until an iteration number $N$.
+which can be implemented in Python. A for-loop needs to be created so Eqs. \eqref{eq:updateEqs} can be iteratively calculated until a user-specified iteration number $N$.
 
 \subsection{Cases}\label{sec:cases}
-The project description states 5 different cases that need to be tested:
+The project description states 5 different cases that need to be tested. The cases contain different values for the parameters $\sigma$, $\beta$ and $\rho$ according to
 
 \begin{enumerate}
     \item $\sigma = 10$, $\beta = 8/3$, and $\rho = 6$
@@ -86,10 +86,11 @@ Algorithm \ref{alg:calcOrder} contains pseudocode showing the core algorithm imp
         - free parameters $\sigma$, $\beta$ and $\rho$\\
         - time step $t_\delta$\\
         - no. of iterations $N$\\
+        - vectors to store values for $x$, $y$ and $z$.\\
         \For {$n = 0:N-1$}
         {
             Calculate $x[n+1]$, $y[n+1]$, and $z[n+1]$ using Eqs. \eqref{eq:updateEqs}.\\
-            Save these values to vectors
+            Save these values to vectors initialised before
         }
         
         Plot the saved vectors $x$, $y$ and $z$.
@@ -99,13 +100,12 @@ Algorithm \ref{alg:calcOrder} contains pseudocode showing the core algorithm imp
     \caption{\it Pseudocode showing the order of calculations.\label{alg:calcOrder}}
 \end{algorithm}
 
-The initial conditions used are $x[0] = 1.0$, $y[0] = 1.0$ and $z[0] = 1.0$. Furthermore, the time step $\td = 0.002$ and number of iterations $N = 10000$ for all cases. A script is made where the simulation can be easily run using other initial conditions, and parameters. This will be introduced below.
+The initial conditions used for the cases $x[0] = 1.0$, $y[0] = 1.0$ and $z[0] = 1.0$. Furthermore, the time step $\td = 0.002$ and number of iterations $N = 10000$ for all cases. A script is made where the simulation can be easily run using other initial conditions, and parameters. This will be introduced below.
 
 \section{Design Considerations}
-The goal of the project is to implement the Equations in \eqref{eq:updateEqs} in Python. The variables needed are the ones found in Eqs. \eqref{eq:updateEqs}. The output of the simulation needs to be three vectors (/arrays) that have the values of $x$, $y$ and $z$ stored over time. These can then be plotted using the \code{matplotlib.pyplot} module.
+The goal of the project is to implement Eqs. \eqref{eq:updateEqs} in Python. The variables needed are the ones found in Eqs. \eqref{eq:updateEqs}. The output of the simulation needs to be three vectors (/arrays) that have the values of $x$, $y$ and $z$ stored over time. These can then be plotted using the \code{matplotlib.pyplot} module.
 
 Below, the file and folder structure can be found:
-\pagebreak
 \dirtree{%
 .1 /.
 .2 lorenz.
@@ -148,32 +148,40 @@ The \code{lorenz} package (/folder) contains the following files:
     \item \code{\_\_init\_\_.py}: needed to make \code{lorenz} a package
     \item \code{run.py}: This script can be run to simulate the Lorenz attractor.  
     \item \code{solver.py}: Solves the system and returns vectors of data with $x$, $y$ and $z$ over time.
-    \item \code{finiteDifferences.py}: Used by \code{solver.py} to solve the equations.  
+    \item \code{finiteDifferences.py}: Used by \code{solver.py} to solve the equations using Eqs. \eqref{eq:updateEqs}.  
     \item \code{plotting.py}: Plots the results. 
 \end{itemize}
 \vspace{1em}
-The \code{run.py} file runs \code{solver.py} and plots the results (vectors of data with $x$, $y$ and $z$ over time) using \code{plotting.py} without generating files. The initial conditions, parameters ($\sigma$, $\beta$, and $\rho$), time step $\td$ and number of iterations $N$ can be changed in the file. I decided to have a separate file \code{finiteDifferences.py} that calculates the finite difference schemes, and is used by the solver to have a better overview of what is happening.
+The \code{run.py} file runs the \code{solve} function in \code{solver.py} and plots the results (vectors of data with $x$, $y$ and $z$ over time) using the \code{plotLorenz} function in \code{plotting.py} (without generating files). The initial conditions, parameters ($\sigma$, $\beta$, and $\rho$), time step $\td$ and number of iterations $N$ can be changed in the file. I decided to have a separate file \code{finiteDifferences.py} that calculates the finite difference schemes, and is used by the solver to have a better overview of what is happening.
+
+The \code{plotting.py} file plots the values of $x$, $y$ and $z$ over time returned by the \code{solve} function in \code{solver.py}. Three of the plots are 2D from an $(x,y)$, $(x,z)$ and $(y,z)$ perspective, and one is a 3D plot. Apart from the data output from \code{solver.solve}, \code{plotting.plotLorenz} takes in some additional arguments. The first is the \code{step\_size} that allows to skip some of the indices of the $x$, $y$ and $z$ vectors as it might get `too crowded' in the plot for a smaller value of $\td$. Furthermore, the \code{scatter\_size} argument determines the size of the scattered dots. The first data-entry is plotted in red and denotes the initial condition. The rest of the data is colour-coded based on the current velocity of the system state (again, calculated using Euler's method) and a colourbar is added as a legend. 
+
+The \code{solver.solve} and \code{plotting.plotLorenz} functions contain timers that print how long the functions took to run. This is to get an idea about the parts of the code that are most time-consuming.
+\vspace{1em}
 
 The \code{cases} folder contains the following files:
 \begin{itemize}
-    \item \code{run\_case.py}: Script that generates the data and plots for a case specified in the code.
+    \item \code{run\_case.py}: Script that uses \code{generate\_data\_and\_figures.py} and generates the data and plots for a case specified in the code.
     \item \code{generate\_data\_and\_figures.py}: Called from \code{run\_case.py} and generates the data and plots for the case specified. It uses the \code{scheme\_variables.csv} file to retrieve the cases data.
     \item \code{generate\_cases\_CSV.py}: Used to generate the \code{scheme\_variables.csv} file.
+    \item \code{scheme\_variables.csv}: Contining the cases data from Section \ref{sec:cases} generated by the  \code{generate\allowbreak\_cases\_CSV.py} file/.
+    \item \code{output\_files}: Contains a folder for each case storing the plots and the data generated by \code{run\_case.py}
 \end{itemize}
 \vspace{1em}
-The \code{run\_case.py} file acts the same way as \code{run.py} but has the values of $\sigma$, $\beta$, and $\rho$ determined by the \code{scheme\_variables.csv} file rather than being user-determined. This \code{.csv} file contains the parameter-values of the 5 different cases presented in Section \ref{sec:cases}. Furthermore, I decided to not have separate files to generate each of the cases (i.e., \code{case1.py}, \code{case2.py}, etc.) but instead have one script \code{run\_case.py} where the case number can be changed in the script. The data and figures are generated and are saved in the \code{output\_files} folder in a(nother) folder called \code{case1\_output} for case 1, \code{case2\_output} for case 2, etc. The data generated is saved in \code{simulation\_result.hdf5}, as \code{.hdf5} files are a great way to store large amounts of data and work with in Python. Furthermore, 4 plots are generated in \code{.pdf} format. Three of these are 2D plots from an $(x,y)$, $(x,z)$ and $(y,z)$ perspective, and the last is a 3D plot.  
+I decided to not have separate files to generate each of the cases (i.e., \code{case1.py}, \code{case2.py}, etc.) but instead have one script \code{run\_case.py} where the case number can be changed in the script. This to avoid copy-pasting the same file 5 times. The \code{run\_case.py} file acts the same way as \code{run.py} but has the values of $\sigma$, $\beta$, and $\rho$ determined by the \code{scheme\_variables.csv} file rather than being user-determined. This \code{.csv} file contains the parameter-values of the 5 different cases presented in Section \ref{sec:cases}. An \code{action} variable can be changed from \code{`simulate'} to \code{`load'} to load the data after it has been generated. If there is no data available, an exception is thrown and the user is told to change \code{action} to \code{`simulate'} and generate the data first. Furthermore, the data and figures are generated and are saved in the \code{output\_files} folder in a(nother) folder called \code{case<casenumber>\_output}. So \code{case1\_output} for case 1, \code{case2\_output} for case 2, etc. The data generated (the output from \code{solver.solve}) is saved in an \code{.hdf5} file called \code{simulation\_result.hdf5}. I decided on this file-type, as it is a great way to store large amounts of data and work with in Python. Furthermore, the 4 plots generated by \code{plotting.py} are saved in \code{.pdf} format as it allows for vector images and is cross-platform. 
 
 \section{Testing}
+The main function that I want to test is \code{solver.solve} as this is where the ODE simulation is carried out. I chose to use \code{pytest} as the strategy for testing the code and decided against using \code{doctest}. This is because the function output is `complicated' -- large \code{numpy} arrays. I figured that a test class formatted for \code{pytest} can be written more elaborately than using the docstring and \code{doctest}.
 
-Once I got plots that looked like the ones I found online, I knew that the implementation of the algorithm could be considered correct. The function I would like to test is the \code{solve} function -- the main function in the \code{solver.py} file. 
+Once I got plots that looked like the ones I found online, I knew that the implementation of the algorithm could be considered correct. In the future, to confirm this hunch, a comparison to the output of an ODE solver such as the one in \code{scipy} could be used to test whether the output of the approximation is close enough to the more accurate solution.
 
-The values I would like to test are the vectors returned by the \code{solve} function after 2 iterations. This way I would know that the simulation had ran a few times and that it works. 
+I decided against using a high number of iterations for testing and instead only used 2 iterations. This way I would know that the simulation had ran a few times and that it would go the right way and not return odd values. 
 
 The first test I wanted to implement was one that checked whether if the the initial conditions are set to $0$ and the parameters are set to $0$, the solver should return $0$.
 
 Then I tested with different initial conditions and parameter values, ran the solve function for 2 iterations and saved the output in the \code{test\_lorenz.py} file. This could then be used for testing the \code{solve} function at a later point and confirm that any changes to the algorithm would not affect the final result. 
 
-As the choice of initial conditions could make the scheme unstable, a final test should be implemented to check whether after a larger number of iterations (one that would normally be used to plot the results), the values are \code{nan} (not-a-number). Unfortunately, I have not been able to implement this and this is left for future work. 
+As a wrong choice of initial conditions could make the scheme unstable, a final test should be implemented to check whether after a larger number of iterations (one that would normally be used to plot the results -- e.g. $N = 10000$), the values are \code{nan} (not-a-number). Unfortunately, I have not been able to implement this and this is left for future work. 
 
 \bibliographystyle{IEEEtran}
 \bibliography{references}
